@@ -12,13 +12,15 @@ use gpui_kit::base::{
 };
 use gpui_kit::rems;
 use gpui_kit::{
-    App, ElementId, Entity, FocusHandle, KeyDownEvent, MouseButton, Window, div, prelude::*,
+    App, ElementId, Entity, FocusHandle, KeyDownEvent, MouseButton, Window, div, prelude::*, px,
     relative,
 };
 use std::time::Duration;
 
-/// The knob's scale while hovered or pressed (`PanelSlider.qml`).
-const HOT_KNOB_SCALE: f32 = 1.15;
+/// The knob's scale while hovered or pressed. `PanelSlider.qml` grows its
+/// 14px round knob by 1.15; a square knob reads larger at the same scale, so
+/// this one grows by less.
+const HOT_KNOB_SCALE: f32 = 1.06;
 /// The knob's resting size, in rems.
 const KNOB_SIZE: f32 = 1.;
 /// The knob's vertical center within the 1.75rem slider, in rems.
@@ -126,9 +128,14 @@ pub fn slider(
             window,
             cx,
         );
-        // Grow around the knob's center so neither the track nor the knob's
-        // position shifts.
-        let size = KNOB_SIZE * scale;
+        // Grow around the knob's center by whole device pixels on each side,
+        // at least one while hot. A fractional size would round its opposite
+        // edges in different directions, nudging the square off center.
+        let rest = rems(KNOB_SIZE).to_pixels(window.rem_size());
+        let scale_factor = window.scale_factor();
+        let grow = ((scale - 1.) * rest.as_f32() / 2. * scale_factor).ceil() / scale_factor;
+        let size = rest + px(2. * grow);
+        let center = rems(KNOB_CENTER).to_pixels(window.rem_size());
         let target = state.clone();
         let pointer_focus: FocusHandle = focus.clone();
         let knob_press = pointer.clone();
@@ -137,14 +144,14 @@ pub fn slider(
                 .start(start)
                 .disabled(disabled)
                 .absolute()
-                .top(rems(KNOB_CENTER - size / 2.))
+                .top(center - size / 2.)
                 .left(relative(if start {
                     percentage.start
                 } else {
                     percentage.end
                 }))
-                .ml(rems(-size / 2.))
-                .size(rems(size))
+                .ml(-size / 2.)
+                .size(size)
                 .debug_selector(move || format!("omarchy-slider-thumb-{edge}"))
                 .border_2()
                 .border_color(t.accent)
@@ -285,16 +292,14 @@ mod tests {
         );
         // The pressed knob grows around its center.
         cx.executor().advance_clock(SLIDER_KNOB_SCALE * 2);
-        assert!((knob_center(cx) - pressed).abs() < 0.5, "grows in place");
+        assert!((knob_center(cx) - pressed).abs() < 0.01, "grows in place");
         let grown = cx
             .debug_bounds("omarchy-slider-thumb-end")
             .unwrap()
             .size
             .width;
-        assert!(
-            (grown.as_f32() - 16. * HOT_KNOB_SCALE).abs() < 0.5,
-            "{grown:?}"
-        );
+        // At least one device pixel on each side, and no more than the scale asks.
+        assert!(grown.as_f32() > 16. && grown.as_f32() <= 18., "{grown:?}");
         cx.simulate_mouse_up(target, MouseButton::Left, Modifiers::default());
         let released = knob_center(cx);
         assert!(
