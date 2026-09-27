@@ -87,7 +87,7 @@ pub fn button_group(
                 })
                 .when(
                     focus.is_focused(window) && cursor.read(cx).index == Some(index),
-                    |row| row.border_color(t.accent),
+                    |row| row.border_color(t.focus_border()),
                 )
                 .when(!item.disabled, |row| {
                     row.hover(|row| row.bg(t.hover_fill()))
