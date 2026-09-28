@@ -2215,7 +2215,9 @@ dependencies = [
  "async-channel",
  "chrono",
  "gpui-kit",
+ "itertools 0.13.0",
  "notify",
+ "num-traits",
  "toml 0.8.23",
 ]
 
