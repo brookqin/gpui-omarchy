@@ -157,6 +157,13 @@ To release:
 
 Use a new version for each release; crates.io does not allow replacing an existing version. A tag/version mismatch or failed check stops publication.
 
+## Users
+
+- [omasend](https://github.com/huacnlee/omasend)
+- [disktree](https://github.com/tobi/disktree)
+- [omabeam](https://github.com/cfaulkingham/omabeam)
+- [omakeeb](https://github.com/zythosec/omakeeb)
+
 ## License
 
 [MIT](LICENSE) © 2026 Jason Lee (huacnlee).
